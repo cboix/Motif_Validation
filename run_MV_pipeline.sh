@@ -10,15 +10,17 @@
 #$ -b y 
 #$ -V 
 #$ -r y 
-#$ -o $HOME/out_MV
-#$ -e $HOME/out_MV
+#$ -o /seq/epiprod/epstein_c/out_MV
+#$ -e /seq/epiprod/epstein_c/out_MV
 #$ -t 1-2 # NOTE: Number of lines in script goes here
-#
-# Alternatively, run as:
-# SCHEDOPT="-l h_vmem=30G -l h_rt=05:00:00 -j y -b y -V -r y -N MVpipe_${DESC}"
+# ---------------------------------------------------------------------------------------
+# Alternatively, run as follows:
+# bash
+# INFOFILE="FILEHERE"
+# NUM="1-5" # Range of lines to run
+# SCHEDOPT="-l h_vmem=30G -l h_rt=05:00:00 -j y -b y -V -r y -N MVpipe"
 # qsub -cwd -t 1-$NUM ${SCHEDOPT} -o $BINDIR/out "$BINDIR/run_MV_pipeline.sh ${INFOFILE}"
-# BINDIR=$HOME/Motif_Validation/
-# mkdir -p $HOME/out_MV
+# BINDIR=/seq/epiprod/epstein_c/Motif_Validation/
 # ---------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
@@ -53,8 +55,8 @@ fi
 # BEDFILE="BED Filename"
 # ------------------------------------------------------------
 eval $( awk -vOFS="\t" -F "\t" -f $BINDIR/by_header.awk -v cols="UID,Alignment Post Processing:Epitopes,BED Filename" $INFOFILE | sed "${TASK}q;d" - | awk '{printf("EID=%s; EPITOPE=%s; BEDFILE=%s;\n",$1,$2,$3)}' )
+# NOTE: Can include antibody name if needed?
 # TagFormat (must be): AbName_TFName_ExperimentID_TFName.bed 
-# TODO Process antibody name
 export TAG=${EPITOPE}_${EPITOPE}_${EID}_${EPITOPE}.bed
 cp $BEDFILE ${WORKDIR}/${TAG}.bed
 
@@ -71,9 +73,11 @@ cp $BEDFILE ${WORKDIR}/${TAG}.bed
 cd $BINDIR/pipeline_script
 source activate mv_env;
 # Update paths so that miniconda libraries are first:
-export PATH=${MINICONDA_PATH}/bin/:$PATH
-export LD_LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LD_LIBRARY_PATH
-export LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LIBRARY_PATH
+# export PATH=${MINICONDA_PATH}/bin/:$PATH
+# export LD_LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LD_LIBRARY_PATH
+# export LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LIBRARY_PATH
+GENOME="hg19"
+TOPN=10000
 # Run pipeline:
 python ${BINDIR}/pipeline_script/pipeline.py ${WORKDIR}/${TAG}.bed $GENOME $TOPN $USER
 # Leave environment:

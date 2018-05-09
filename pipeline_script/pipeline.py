@@ -16,16 +16,19 @@ root = sys.path[0]
 print("Root is: " + str(root))
 genome = "hg19"
 
-if len(sys.argv) > 1:
-    genome = sys.argv[1]
+inputPeakfile = sys.argv[1]
+
+genome = "hg19"
+if len(sys.argv) > 2:
+    genome = sys.argv[2]
 
 topN = 10000
-if len(sys.argv) > 2:
-    topN = int(sys.argv[2])
+if len(sys.argv) > 3:
+    topN = int(sys.argv[3])
 
 user = 'cboix'
-if len(sys.argv) > 3:
-    user = sys.argv[3]
+if len(sys.argv) > 4:
+    user = sys.argv[4]
 
 # ----------
 # Variables:
@@ -37,7 +40,6 @@ genome_motifset["mm10"] = "tfh"
 
 motifdir = "/broad/compbio/pouyak/motifs/verts/insts/" + \
     genome + "/" + genome_motifset[genome] + "/Intergenic/optmm"
-inputPeakfile = sys.argv[1]
 
 genome_maskname = dict()
 genome_maskname["hg19"] = "268435455"
