@@ -1,11 +1,25 @@
 #!/bin/bash
-# Motif validation pipeline:
-# Run with the following options:
-# TODO update for ce:
-# BINDIR=/broad/compbio/cboix/MOTIF_VALIDATION/
-# mkdir -p $BINDIR/out
+# ---------------------------------------------------------------------------------------
+# Motif validation pipeline qsub array submission script
+# Grid Engine options:
+#$ -N MV_pipeline
+#$ -cwd
+#$ -l h_vmem=30G 
+#$ -l h_rt=05:00:00
+#$ -j y
+#$ -b y 
+#$ -V 
+#$ -r y 
+#$ -o $HOME/out_MV
+#$ -e $HOME/out_MV
+#$ -t 1-2 # NOTE: Number of lines in script goes here
+#
+# Alternatively, run as:
 # SCHEDOPT="-l h_vmem=30G -l h_rt=05:00:00 -j y -b y -V -r y -N MVpipe_${DESC}"
 # qsub -cwd -t 1-$NUM ${SCHEDOPT} -o $BINDIR/out "$BINDIR/run_MV_pipeline.sh ${INFOFILE}"
+# BINDIR=$HOME/Motif_Validation/
+# mkdir -p $HOME/out_MV
+# ---------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------
 # 0. If the following environment does not exist, create it:

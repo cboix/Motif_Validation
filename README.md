@@ -34,7 +34,7 @@ Author
 ---
 Pouya Kheradpour
 
-Maintained by Carles Boix (cboix@mit.edu)
+Maintained by Carles Boix
 
 MIT Kellis Lab 
 =======
