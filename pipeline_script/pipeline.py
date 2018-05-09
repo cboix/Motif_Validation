@@ -1,0 +1,150 @@
+#!/usr/bin/python2.7
+import time
+import os
+import sys
+import subprocess
+
+
+def oss(cmd):
+    print(cmd + "\n")
+    os.system(cmd)
+
+# ----------
+# Arguments:
+# ----------
+root = sys.path[0]
+print("Root is: " + str(root))
+genome = "hg19"
+
+if len(sys.argv) > 1:
+    genome = sys.argv[1]
+
+topN = 10000
+if len(sys.argv) > 2:
+    topN = int(sys.argv[2])
+
+user = 'cboix'
+if len(sys.argv) > 3:
+    user = sys.argv[3]
+
+# ----------
+# Variables:
+# ----------
+genome_motifset = dict()
+genome_motifset["hg19"] = "tfh"
+genome_motifset["mm9"] = "tf"
+genome_motifset["mm10"] = "tfh"
+
+motifdir = "/broad/compbio/pouyak/motifs/verts/insts/" + \
+    genome + "/" + genome_motifset[genome] + "/Intergenic/optmm"
+inputPeakfile = sys.argv[1]
+
+genome_maskname = dict()
+genome_maskname["hg19"] = "268435455"
+genome_maskname['mm9'] = "1048575"
+genome_maskname["mm10"] = "1099511627775"
+maskname = genome_maskname[genome]
+
+motifMatchFile = motifdir + "/8mer/" + maskname + "/matches/0.0.gz"
+tmpdir = "/broad/hptmp/" + user + "/motifpipeline/" + \
+    os.path.basename(inputPeakfile).split(".")[0]
+cmd = "mkdir -p " + tmpdir
+oss(cmd)
+tmpfile = tmpdir + "/" + os.path.basename(inputPeakfile)
+
+# ------------------
+# Reformat peak file
+# ------------------
+print("Reformatting peak file...")
+tmpfile_origwidth = tmpdir + "/" + \
+    os.path.basename(inputPeakfile) + ".origwidth"
+topNfilterStr = "|awk '$6<" + str(topN) + "{print}'"
+cmd = "sh " + root + "/reformat.sh " + \
+    inputPeakfile + topNfilterStr + " > " + tmpfile
+oss(cmd)
+cmd = "sh " + root + "/reformat_originalwidth.sh " + \
+    inputPeakfile + topNfilterStr + "  > " + tmpfile_origwidth
+oss(cmd)
+
+
+def IsGoodSize(fn):
+    if not os.path.isfile(fn):
+        return False
+    statinfo = os.stat(fn)
+    if statinfo.st_size > 80000:
+        return True
+    else:
+        return False
+
+# compute global enrichment score
+print("Compute global enrichment score")
+gbdir = tmpfile + ".global_enrichment_score"
+GlobalEnrichmentFn = gbdir + "/enrichments.txt.gz"
+if not IsGoodSize(GlobalEnrichmentFn):
+    cmd = "rm -rf " + gbdir + "; "
+    cmd += "zsh " + root + "/Enricher.zzz.sh -d " + gbdir + " -o " + genome + \
+        " -i " + tmpfile_origwidth + " -C 0 -p  " + motifdir + \
+        " -P 0 -Z 1.96 -N 0 -n 0.0 -k " + maskname + "  -K 8"
+    # set Number of Nodes = 0, make it local execution
+    oss(cmd + "&")
+# TODO do we have to wait for this??
+
+# grep motif-overlap
+tmpfile2 = tmpfile + ".ol"
+print("Grep motif overlap")
+if not os.path.isfile(tmpfile2):
+    cmd = "grep-overlap " + motifMatchFile + " " + \
+        tmpfile + "|grep -v 8mer_C > " + tmpfile2
+    oss(cmd)
+
+# Compute positional and peak-rank score
+PosRankEnrichmentFn = tmpfile2 + ".pickle.score"
+print("Compute positional and peak-rank score")
+if not os.path.isfile(PosRankEnrichmentFn):
+    cmd = "python2.7 " + root + "/computePositionBias_RankBias.py " + tmpfile2
+    oss(cmd)
+
+# Compute CombineAvgScore
+print("Waiting on Enricher...")
+round = 0
+while True:
+    round += 1
+    lastoutput = ""
+    cmd = "ps aux|grep " + user + "|grep Enricher.zzz|wc -l"
+    # if IsGoodSize(GlobalEnrichmentFn) or round>2000:
+    output = subprocess.check_output(cmd, shell=True).strip()
+    if output != lastoutput:
+        print(output)
+        lastoutput = output
+    if output == "2":
+        break
+    time.sleep(3)
+print("Enricher is done.")
+#
+print("Calculating: Combine Average Score")
+cmd = "python2.7 " + root + "/combineAvgScore.py " + \
+    GlobalEnrichmentFn + " " + PosRankEnrichmentFn
+oss(cmd)
+#
+print("Calculating: Accept/Reject")
+inputSummaryPickleFn = PosRankEnrichmentFn + ".summary.pickle"
+cmd = "python2.7 " + root + "/AcceptReject.py " + inputSummaryPickleFn
+oss(cmd)
+
+tfname_HGNCname = dict()
+for line in open(root + "/data/name-mapping.txt"):
+    comps = line.strip().replace("_Neurons", "").split()
+    tfname_HGNCname[comps[0].upper()] = comps[1]
+
+TFname = "unknownTF"
+comps = os.path.basename(inputPeakfile).split("_")
+if len(comps) > 1:
+    TFname = comps[1].upper()
+    if TFname in tfname_HGNCname:
+        TFname = tfname_HGNCname[TFname]
+    TFname = TFname.replace("ALPHA", "A").replace("BETA", "B").replace(
+        "GAMMA", "C").upper()
+print(TFname)
+cmd = "python2.7 " + root + "/makehtml_png.py " + tmpdir + " " + TFname + \
+    + " " + user + " > " + tmpdir + "/index.html"
+oss(cmd)
