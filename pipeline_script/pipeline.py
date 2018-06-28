@@ -78,18 +78,20 @@ def IsGoodSize(fn):
     else:
         return False
 
-# compute global enrichment score
-print("Compute global enrichment score")
+# Compute global enrichment score
 gbdir = tmpfile + ".global_enrichment_score"
 GlobalEnrichmentFn = gbdir + "/enrichments.txt.gz"
 if not IsGoodSize(GlobalEnrichmentFn):
+    print("Compute global enrichment score")
     cmd = "rm -rf " + gbdir + "; "
     cmd += "zsh " + root + "/Enricher.zzz.sh -d " + gbdir + " -o " + genome + \
         " -i " + tmpfile_origwidth + " -C 0 -p  " + motifdir + \
         " -P 0 -Z 1.96 -N 0 -n 0.0 -k " + maskname + "  -K 8"
     # set Number of Nodes = 0, make it local execution
     oss(cmd + "&")
-# TODO do we have to wait for this??
+else:
+    print("Global enrichment scores already present in " +
+          GlobalEnrichmentFn)
 
 # grep motif-overlap
 tmpfile2 = tmpfile + ".ol"
@@ -146,7 +148,8 @@ if len(comps) > 1:
         TFname = tfname_HGNCname[TFname]
     TFname = TFname.replace("ALPHA", "A").replace("BETA", "B").replace(
         "GAMMA", "C").upper()
-print(TFname)
-cmd = "python2.7 " + root + "/makehtml_png.py " + tmpdir + " " + TFname + \
-    + " " + user + " > " + tmpdir + "/index.html"
+
+print("Making figures for TF name" + TFname)
+cmd = "python2.7 " + root + "/makehtml_png.py " + str(tmpdir) + " " + str(TFname) + \
+    " " + str(user) + " > " + str(tmpdir) + "/index.html"
 oss(cmd)

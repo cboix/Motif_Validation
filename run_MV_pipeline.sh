@@ -54,10 +54,10 @@ fi
 # EPITOPE="Alignment Post Processing:Epitopes"
 # BEDFILE="BED Filename"
 # ------------------------------------------------------------
-eval $( awk -vOFS="\t" -F "\t" -f $BINDIR/by_header.awk -v cols="UID,Alignment Post Processing:Epitopes,BED Filename" $INFOFILE | sed "${TASK}q;d" - | awk '{printf("EID=%s; EPITOPE=%s; BEDFILE=%s;\n",$1,$2,$3)}' )
-# NOTE: Can include antibody name if needed?
-# TagFormat (must be): AbName_TFName_ExperimentID_TFName.bed 
-export TAG=${EPITOPE}_${EPITOPE}_${EID}_${EPITOPE}.bed
+eval $( awk -vOFS="\t" -F "," -f $BINDIR/by_header.awk -v cols="UID,Alignment Post Processing:Epitopes,BED Filename" $INFOFILE | sed "${TASK}q;d" - | awk '{printf("EID=%s; EPITOPE=%s; BEDFILE=%s;\n",$1,$2,$3)}' )
+# NOTE: Can include antibody name if needed.
+# TagFormat (must be): AbName_TFName_ExperimentID_TFName
+export TAG=${EPITOPE}_${EPITOPE}_${EID}_${EPITOPE}
 cp $BEDFILE ${WORKDIR}/${TAG}.bed
 
 # ---------------------------------------------------
@@ -70,12 +70,14 @@ cp $BEDFILE ${WORKDIR}/${TAG}.bed
 # - topN (10000)
 # - Username
 # ---------------------------------------------------
+# Must be in script directory for dir variables to work properly:
 cd $BINDIR/pipeline_script
 source activate mv_env;
 # Update paths so that miniconda libraries are first:
-# export PATH=${MINICONDA_PATH}/bin/:$PATH
-# export LD_LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LD_LIBRARY_PATH
-# export LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LIBRARY_PATH
+MINICONDA_PATH=$HOME/.conda/envs/mv_env
+export PATH=${MINICONDA_PATH}/bin/:$PATH
+export LD_LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LD_LIBRARY_PATH
+export LIBRARY_PATH=${MINICONDA_PATH}/lib/:$LIBRARY_PATH
 GENOME="hg19"
 TOPN=10000
 # Run pipeline:
@@ -86,7 +88,7 @@ source deactivate
 # --------------------------------
 # 3. Put visualization on the web:
 # --------------------------------
-cp -r ${TMP}/motifpipeline/${TAG} ${WEBDIR}/motifpipeline/jobdata/
+cp -r ${TMP}/motifpipeline/${TAG} ${JOBDATA_DIR}
 
 # Timing info:
 end=`date +%s`

@@ -6,7 +6,7 @@ import operator
 
 
 root = sys.path[0]
-resultDir = sys.argv[1]  # TODO indexing?
+resultDir = sys.argv[1]
 selTF = sys.argv[2]
 username = sys.argv[3]
 dataPath = root + "/data"
@@ -129,14 +129,9 @@ def MotifClustRow(motifclust):
         motifclust_rank[motifclust])
     motiflogo = "<td colspan=1>" + motifLogo(bestmotif) + "</td>"
     posrank_plot = "<td colspan=4>" + motifPosRankPlot(bestmotif) + "</td>"
-    outstr = writeTag(
-        "tr",
-        clustname +
-        enrichRank +
-        negbinomModel +
-        motiflogo +
-        posrank_plot)
-    return outstr
+    outstr = writeTag("tr", clustname + enrichRank +
+                      negbinomModel + motiflogo + posrank_plot)
+    return(outstr)
 
 
 def TFImageTRs(tf, bestMotif):
@@ -306,4 +301,4 @@ htmlContent += TFTable_noimage(selTFlines)
 
 
 htmlContent += "</body>"
-print htmlContent
+print(htmlContent)
